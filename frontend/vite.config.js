@@ -11,20 +11,19 @@ export default defineConfig({
       //   enabled: true,
       //   type: 'module',
       // },
-      manifest: {
+manifest: {
         name: 'Task Manager PWA',
         short_name: 'Tasks',
-        description: 'Task Manager Progressive Web App',
-
-        start_url: '/',
+        theme_color: '#121212', // Updated to match your dark mode UI
+        background_color: '#121212',
+        display: 'standalone', // CRITICAL: This hides the browser address bar!
         scope: '/',
-        display: 'standalone',
-
-        background_color: '#ffffff',
-        theme_color: '#ffffff',
+        start_url: '/', // CRITICAL: Tells the app where to open
         icons: [
           { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/icon-512.png', sizes: '512x512', type: 'image/png' }
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+          // Adding a maskable icon is required by modern Android devices for a clean look
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
         ]
       },
       // workbox: {
