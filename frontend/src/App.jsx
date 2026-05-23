@@ -587,270 +587,6 @@
 
 
 
-// import { useState, useEffect, useRef } from 'react';
-// import './index.css';
-// import { 
-//   useGetTasksQuery, 
-//   useAddTaskMutation, 
-//   useUpdateTaskMutation, 
-//   useDeleteTaskMutation,
-//   useDeleteAllTasksMutation 
-// } from './features/tasksApi';
-
-// function App() {
-//   // --- Local State ---
-//   const [title, setTitle] = useState('');
-//   const [searchQuery, setSearchQuery] = useState('');
-//   const [editingId, setEditingId] = useState(null);
-//   const [editTitle, setEditTitle] = useState('');
-//   const [page, setPage] = useState(1);
-  
-//   // --- NEW: Track Offline Status ---
-//   const [isOffline, setIsOffline] = useState(!navigator.onLine);
-
-//   useEffect(() => {
-//     const handleOnline = () => setIsOffline(false);
-//     const handleOffline = () => setIsOffline(true);
-
-//     window.addEventListener('online', handleOnline);
-//     window.addEventListener('offline', handleOffline);
-
-//     return () => {
-//       window.removeEventListener('online', handleOnline);
-//       window.removeEventListener('offline', handleOffline);
-//     };
-//   }, []);
-  
-//   // --- Infinite Scroll Reference ---
-//   const observerTarget = useRef(null);
-  
-//   // --- RTK Query Hooks ---
-//   const { data = {}, isLoading, isError, isFetching } = useGetTasksQuery(page);
-  
-//   const tasks = data.tasks || [];
-//   const totalPages = data.totalPages || 1;
-//   const totalTasks = data.totalTasks || 0;
-
-//   const [addTask, { isLoading: isAdding }] = useAddTaskMutation();
-//   const [updateTask] = useUpdateTaskMutation();
-//   const [deleteTask] = useDeleteTaskMutation();
-//   const [deleteAllTasks, { isLoading: isDeletingAll }] = useDeleteAllTasksMutation();
-
-//   // --- Filtering ---
-//   const filteredTasks = tasks.filter(task => 
-//     task.title.toLowerCase().includes(searchQuery.toLowerCase())
-//   );
-
-//   // --- Infinite Scroll Logic ---
-//   useEffect(() => {
-//     const observer = new IntersectionObserver(
-//       (entries) => {
-//         if (entries[0].isIntersecting && page < totalPages && !isFetching) {
-//           setPage(prevPage => prevPage + 1); 
-//         }
-//       },
-//       { threshold: 1.0 }
-//     );
-
-//     if (observerTarget.current) {
-//       observer.observe(observerTarget.current);
-//     }
-
-//     return () => {
-//       if (observerTarget.current) observer.unobserve(observerTarget.current);
-//     };
-//   }, [observerTarget, page, totalPages, isFetching]);
-
-//   // --- Event Handlers ---
-//   const handleAddSubmit = async (e) => {
-//     e.preventDefault();
-//     if (!title.trim()) return;
-
-//     // 1. Save the title to a temporary variable
-//     const currentTitle = title;
-    
-//     // 2. CLEAR THE UI INSTANTLY (Do not wait for the network!)
-//     setTitle(''); 
-    
-//     // ONLY reset the page if we are online. If offline, stay where we are so Optimistic UI holds!
-//     if (!isOffline) {
-//       setPage(1);
-//     }
-
-//     try {
-//       // 3. Fire the mutation
-//       await addTask({ title: currentTitle }).unwrap();
-//     } catch (err) { 
-//       // 4. If we are offline, Workbox queues it.
-//       console.log("Network failed, but Workbox has queued the task."); 
-//     }
-//   };
-
-//   const handleEditSave = async (id) => {
-//     if (!editTitle.trim()) return;
-//     try {
-//       await updateTask({ id, title: editTitle }).unwrap();
-//       setEditingId(null);
-//     } catch (err) { 
-//       console.error("Failed to update task", err); 
-//     }
-//   };
-
-//   const handleToggleComplete = async (task) => {
-//     try {
-//       await updateTask({ id: task._id, completed: !task.completed }).unwrap();
-//     } catch (err) { 
-//       console.error("Failed to toggle task", err); 
-//     }
-//   };
-
-//   const handleClearAll = async () => {
-//     if (window.confirm('Are you sure you want to delete all tasks? This cannot be undone.')) {
-//       try {
-//         await deleteAllTasks().unwrap();
-//         setPage(1); 
-//       } catch (err) {
-//         console.error("Failed to clear tasks", err);
-//       }
-//     }
-//   };
-
-//   // --- Render UI ---
-//   return (
-//     <div className="app-container">
-      
-//       {/* --- Offline Warning Banner --- */}
-//       {isOffline && (
-//         <div style={{
-//           backgroundColor: 'var(--danger-color)',
-//           color: 'white',
-//           padding: '10px',
-//           textAlign: 'center',
-//           borderRadius: '8px',
-//           marginBottom: '20px',
-//           fontWeight: 'bold'
-//         }}>
-//           You are offline. Changes will sync when you reconnect.
-//         </div>
-//       )}
-
-//       <h1>Task Manager PWA</h1>
-      
-//       {/* Search Bar */}
-//       <div className="input-group">
-//         <input 
-//           type="text" 
-//           placeholder="Search loaded tasks..." 
-//           value={searchQuery}
-//           onChange={(e) => setSearchQuery(e.target.value)}
-//         />
-//       </div>
-
-//       {/* Add Task Form */}
-//       <form onSubmit={handleAddSubmit} className="input-group">
-//         <input 
-//           type="text" 
-//           value={title} 
-//           onChange={(e) => setTitle(e.target.value)} 
-//           placeholder="Add a new task..."
-//           disabled={isAdding && !isOffline}
-//         />
-//         <button type="submit" disabled={(isAdding && !isOffline) || !title.trim()}>
-//           {(isAdding && !isOffline) ? '...' : 'Add'}
-//         </button>
-//       </form>
-
-//       {/* Loading & Error States */}
-//       {isLoading && page === 1 && <p style={{textAlign: 'center'}}>Loading tasks...</p>}
-//       {isError && <p style={{textAlign: 'center', color: 'var(--danger-color)'}}>Error loading tasks.</p>}
-
-//       {/* Stats Header & Clear All */}
-//       {tasks.length > 0 && (
-//         <div className="header-actions">
-//           <span>Showing {tasks.length} of {totalTasks} tasks</span>
-//           <button 
-//             className="btn-danger btn-small" 
-//             onClick={handleClearAll}
-//             disabled={isDeletingAll}
-//           >
-//             Clear All
-//           </button>
-//         </div>
-//       )}
-
-//       {/* Task List */}
-//       <ul className="task-list">
-//         {filteredTasks.map(task => (
-//            <li key={task._id} className="task-item">
-             
-//              <div className="task-content">
-//                <input 
-//                  type="checkbox" 
-//                  checked={task.completed} 
-//                  onChange={() => handleToggleComplete(task)}
-//                />
-               
-//                {/* Edit Mode Toggle */}
-//                {editingId === task._id ? (
-//                  <input 
-//                    type="text" 
-//                    value={editTitle}
-//                    onChange={(e) => setEditTitle(e.target.value)}
-//                    autoFocus
-//                    onKeyDown={(e) => e.key === 'Enter' && handleEditSave(task._id)}
-//                  />
-//                ) : (
-//                  <span className={task.completed ? 'completed-text' : ''}>
-//                    {task.title}
-//                  </span>
-//                )}
-//              </div>
- 
-//              <div className="task-actions">
-//                {editingId === task._id ? (
-//                  <>
-//                    <button className="btn-text" onClick={() => handleEditSave(task._id)}>Save</button>
-//                    <button className="btn-text danger" onClick={() => setEditingId(null)}>Cancel</button>
-//                  </>
-//                ) : (
-//                  <>
-//                    <button className="btn-text" onClick={() => {
-//                      setEditingId(task._id);
-//                      setEditTitle(task.title);
-//                    }}>Edit</button>
-//                    <button className="btn-text danger" onClick={() => deleteTask(task._id)}>Delete</button>
-//                  </>
-//                )}
-//              </div>
-//            </li>
-//         ))}
-        
-//         {/* Empty State */}
-//         {filteredTasks.length === 0 && !isLoading && (
-//           <li className="task-item" style={{justifyContent: 'center', color: 'var(--text-secondary)'}}>
-//             No tasks found.
-//           </li>
-//         )}
-//       </ul>
-
-//       {/* --- INVISIBLE TARGET FOR INFINITE SCROLL --- */}
-//       <div ref={observerTarget} style={{ height: '10px', width: '100%' }}></div>
-
-//       {/* Fetching Indicator for next pages */}
-//       {isFetching && page > 1 && (
-//         <p style={{ textAlign: 'center', color: 'var(--text-secondary)', paddingBottom: '20px' }}>
-//           Loading more tasks...
-//         </p>
-//       )}
-
-//     </div>
-//   );
-// }
-
-// export default App;
-
-
-
 import { useState, useEffect, useRef } from 'react';
 import './index.css';
 import { 
@@ -869,34 +605,11 @@ function App() {
   const [editTitle, setEditTitle] = useState('');
   const [page, setPage] = useState(1);
   
-  // --- Track Offline Status ---
+  // --- NEW: Track Offline Status ---
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
-  // --- Infinite Scroll Reference ---
-  const observerTarget = useRef(null);
-  
-  // --- RTK Query Hooks (Added 'refetch') ---
-  const { data = {}, isLoading, isError, isFetching, refetch } = useGetTasksQuery(page);
-  
-  const tasks = data.tasks || [];
-  const totalPages = data.totalPages || 1;
-  const totalTasks = data.totalTasks || 0;
-
-  const [addTask, { isLoading: isAdding }] = useAddTaskMutation();
-  const [updateTask] = useUpdateTaskMutation();
-  const [deleteTask] = useDeleteTaskMutation();
-  const [deleteAllTasks, { isLoading: isDeletingAll }] = useDeleteAllTasksMutation();
-
-  // --- Network Listener & Re-sync Fix ---
   useEffect(() => {
-    const handleOnline = () => {
-      setIsOffline(false);
-      // Wait 2 seconds for Workbox to upload offline queue, then fetch fresh data
-      setTimeout(() => {
-        refetch();
-      }, 2000); 
-    };
-    
+    const handleOnline = () => setIsOffline(false);
     const handleOffline = () => setIsOffline(true);
 
     window.addEventListener('online', handleOnline);
@@ -906,7 +619,22 @@ function App() {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [refetch]);
+  }, []);
+  
+  // --- Infinite Scroll Reference ---
+  const observerTarget = useRef(null);
+  
+  // --- RTK Query Hooks ---
+  const { data = {}, isLoading, isError, isFetching } = useGetTasksQuery(page);
+  
+  const tasks = data.tasks || [];
+  const totalPages = data.totalPages || 1;
+  const totalTasks = data.totalTasks || 0;
+
+  const [addTask, { isLoading: isAdding }] = useAddTaskMutation();
+  const [updateTask] = useUpdateTaskMutation();
+  const [deleteTask] = useDeleteTaskMutation();
+  const [deleteAllTasks, { isLoading: isDeletingAll }] = useDeleteAllTasksMutation();
 
   // --- Filtering ---
   const filteredTasks = tasks.filter(task => 
@@ -924,7 +652,9 @@ function App() {
       { threshold: 1.0 }
     );
 
-    if (observerTarget.current) observer.observe(observerTarget.current);
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
 
     return () => {
       if (observerTarget.current) observer.unobserve(observerTarget.current);
@@ -936,20 +666,23 @@ function App() {
     e.preventDefault();
     if (!title.trim()) return;
 
+    // 1. Save the title to a temporary variable
     const currentTitle = title;
     
-    // Clear UI instantly for optimistic update
+    // 2. CLEAR THE UI INSTANTLY (Do not wait for the network!)
     setTitle(''); 
     
-    // Protect Optimistic UI: Don't jump to page 1 if offline
+    // ONLY reset the page if we are online. If offline, stay where we are so Optimistic UI holds!
     if (!isOffline) {
       setPage(1);
     }
 
     try {
+      // 3. Fire the mutation
       await addTask({ title: currentTitle }).unwrap();
     } catch (err) { 
-      console.log("Network failed, but Workbox queued the Add task."); 
+      // 4. If we are offline, Workbox queues it.
+      console.log("Network failed, but Workbox has queued the task."); 
     }
   };
 
@@ -986,7 +719,7 @@ function App() {
   return (
     <div className="app-container">
       
-      {/* Offline Warning Banner */}
+      {/* --- Offline Warning Banner --- */}
       {isOffline && (
         <div style={{
           backgroundColor: 'var(--danger-color)',
@@ -1049,6 +782,7 @@ function App() {
       <ul className="task-list">
         {filteredTasks.map(task => (
            <li key={task._id} className="task-item">
+             
              <div className="task-content">
                <input 
                  type="checkbox" 
@@ -1056,6 +790,7 @@ function App() {
                  onChange={() => handleToggleComplete(task)}
                />
                
+               {/* Edit Mode Toggle */}
                {editingId === task._id ? (
                  <input 
                    type="text" 
@@ -1098,7 +833,7 @@ function App() {
         )}
       </ul>
 
-      {/* INVISIBLE TARGET FOR INFINITE SCROLL */}
+      {/* --- INVISIBLE TARGET FOR INFINITE SCROLL --- */}
       <div ref={observerTarget} style={{ height: '10px', width: '100%' }}></div>
 
       {/* Fetching Indicator for next pages */}
@@ -1113,3 +848,5 @@ function App() {
 }
 
 export default App;
+
+
