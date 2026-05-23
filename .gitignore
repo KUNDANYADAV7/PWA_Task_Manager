@@ -1,0 +1,40 @@
+# ========================
+# Node & Dependencies
+# ========================
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# ========================
+# Build Outputs (Vite)
+# ========================
+frontend/dist/
+frontend/dist-ssr/
+frontend/*.local
+frontend/dev-dist/
+
+# ========================
+# Environment Variables (CRITICAL)
+# ========================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+backend/.env
+frontend/.env
+
+# ========================
+# OS & Editor Files
+# ========================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# ========================
+# PWA / Service Worker (Optional)
+# ========================
+# Ignore auto-generated Workbox files if Vite puts them in the root of public
+# frontend/public/sw.js
+# frontend/public/workbox-*.js
